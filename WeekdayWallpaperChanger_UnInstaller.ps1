@@ -806,8 +806,9 @@ function Install-WallpaperTask {
         # 1. Prompt for images folder
         $imgFolder = Choose-Folder @"
 Select the folder containing your 7 weekday wallpapers.
-These should be named like: 1-Sun.jpg, 2-Mon.png, 3-Tue.bmp, etc.
-You can use any supported image format (JPG, PNG, BMP, GIF, TIFF, WEBP).
+These should be named like: 1-Sun, 2-Mon, 3-Tue, 4-Wed, 5-Thu, 6-Fri, 7-Sat
+You can use any supported image format: JPG, JPEG, PNG, BMP, GIF, TIFF, WEBP
+Examples: 1-Sun.jpg, 2-Mon.png, 3-Tue.webp, etc.
 "@ $true
 
         # 2. Prompt for script installation location with explanation
@@ -821,7 +822,7 @@ You can use any supported image format (JPG, PNG, BMP, GIF, TIFF, WEBP).
         # 4. Compose PowerShell script content 
         $wallpaperScript = @'
         
-# Enhanced wallpaper setter that handles Windows 11 slideshow conflicts
+# Enhanced wallpaper setter that handles Windows 11 slideshow conflicts and multiple image formats
 param(
     [string]$ImagePath = ""
 )
@@ -831,78 +832,203 @@ if ([string]::IsNullOrEmpty($ImagePath)) {
     $dayIndex = [int](Get-Date).DayOfWeek
     $dayMap = @("1-Sun", "2-Mon", "3-Tue", "4-Wed", "5-Thu", "6-Fri", "7-Sat")
     $baseFilename = $dayMap[$dayIndex]
-    $imgFolder = "D:\pics\0-desktop-background-slideshow"
-    $ImagePath = Join-Path $imgFolder "$baseFilename.jpg"
+    $imgFolder = "PLACEHOLDER_IMG_FOLDER"
+    
+    Write-Host "Looking for wallpaper for day: $($dayMap[$dayIndex]) in folder: $imgFolder"
+    
+    # Search for image file with any supported extension (case-insensitive)
+    $supportedExtensions = @("jpg", "jpeg", "png", "bmp", "gif", "tiff", "tif", "webp", "JPG", "JPEG", "PNG", "BMP", "GIF", "TIFF", "TIF", "WEBP")
+    $ImagePath = $null
+    
+    foreach ($ext in $supportedExtensions) {
+        $testPath = Join-Path $imgFolder "$baseFilename.$ext"
+        Write-Host "Checking: $testPath"
+        if (Test-Path $testPath) {
+            $ImagePath = $testPath
+            Write-Host "Found image: $ImagePath"
+            break
+        }
+    }
+    
+    # If no exact match found, try fuzzy search (in case of naming variations)
+    if (-not $ImagePath) {
+        Write-Host "No exact match found, trying fuzzy search..."
+        $searchPattern = "$baseFilename*"
+        $foundFiles = Get-ChildItem -Path $imgFolder -Filter $searchPattern -File 2>$null
+        if ($foundFiles) {
+            # Filter to only image extensions
+            $imageFiles = $foundFiles | Where-Object { 
+                $_.Extension.ToLower() -in @(".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".tif", ".webp") 
+            }
+            if ($imageFiles) {
+                $ImagePath = $imageFiles[0].FullName
+                Write-Host "Found via fuzzy search: $ImagePath"
+            }
+        }
+    }
+    
+    # If still no file found, default to .jpg for error message
+    if (-not $ImagePath) {
+        $ImagePath = Join-Path $imgFolder "$baseFilename.jpg"
+        Write-Host "No image found, defaulting to: $ImagePath"
+    }
 }
 
 Write-Host "Setting wallpaper to: $ImagePath"
 
 # Verify image exists
 if (-not (Test-Path $ImagePath)) {
-    Write-Error "Image not found: $ImagePath"
+    Write-Host "ERROR: Image not found: $ImagePath"
+    Write-Host "Available files in directory:"
+    try {
+        Get-ChildItem -Path (Split-Path $ImagePath -Parent) -File | ForEach-Object { Write-Host "  $($_.Name)" }
+    } catch {
+        Write-Host "  Could not list directory contents"
+    }
     exit 1
 }
 
-# Method 1: Registry approach (most reliable for Windows 11)
+# Get absolute path to avoid any path resolution issues
+$ImagePath = (Get-Item $ImagePath).FullName
+Write-Host "Using absolute path: $ImagePath"
+
+# Method 1: Enhanced Registry approach with better error handling
 Write-Host "Setting registry values..."
-Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "WallpaperStyle" -Value "PLACEHOLDER_WALLPAPER_STYLE" -Force
-Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "TileWallpaper" -Value "0" -Force
-Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "Wallpaper" -Value $ImagePath -Force
-
-# Method 2: Force disable slideshow more aggressively
-Write-Host "Disabling slideshow..."
-$personalPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
-if (Test-Path $personalPath) {
-    Set-ItemProperty -Path $personalPath -Name "EnableTransparency" -Value 1 -Force
+try {
+    # Set wallpaper style first
+    Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "WallpaperStyle" -Value "PLACEHOLDER_WALLPAPER_STYLE" -Force
+    Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "TileWallpaper" -Value "0" -Force
+    
+    # Clear any existing wallpaper first
+    Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "Wallpaper" -Value "" -Force
+    Start-Sleep -Milliseconds 200
+    
+    # Set new wallpaper
+    Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "Wallpaper" -Value $ImagePath -Force
+    Write-Host "Registry values set successfully"
+} catch {
+    Write-Host "ERROR setting registry values: $($_.Exception.Message)"
 }
 
-# Set background type to Picture (not slideshow)
-$bgPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Wallpapers"
-if (-not (Test-Path $bgPath)) {
-    New-Item -Path $bgPath -Force | Out-Null
+# Method 2: Disable slideshow and set picture mode more thoroughly
+Write-Host "Configuring Windows 11 personalization settings..."
+try {
+    # Disable slideshow in multiple locations
+    $personalPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+    if (-not (Test-Path $personalPath)) {
+        New-Item -Path $personalPath -Force | Out-Null
+    }
+    
+    # Windows 11 specific settings
+    $desktopPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Wallpapers"
+    if (-not (Test-Path $desktopPath)) {
+        New-Item -Path $desktopPath -Force | Out-Null
+    }
+    Set-ItemProperty -Path $desktopPath -Name "BackgroundType" -Value 0 -Force  # 0 = Picture, 1 = Slideshow
+    
+    # Additional slideshow disable
+    $lockPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Lock Screen\Creative"
+    if (Test-Path $lockPath) {
+        Set-ItemProperty -Path $lockPath -Name "CreativeId" -Value "" -Force -ErrorAction SilentlyContinue
+    }
+    
+    Write-Host "Personalization settings configured"
+} catch {
+    Write-Host "Warning: Could not fully configure personalization settings: $($_.Exception.Message)"
 }
-Set-ItemProperty -Path $bgPath -Name "BackgroundType" -Value 0 -Force
 
-# Method 3: SystemParametersInfo
+# Method 3: Enhanced SystemParametersInfo with better constants
 Write-Host "Applying via SystemParametersInfo..."
 Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
-public class Wallpaper {
+public class WallpaperAPI {
     [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+    public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+    
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool InvalidateRect(IntPtr hWnd, IntPtr lpRect, bool bErase);
+    
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool UpdateWindow(IntPtr hWnd);
+    
+    public const int SPI_SETDESKWALLPAPER = 0x0014;
+    public const int SPIF_UPDATEINIFILE = 0x01;
+    public const int SPIF_SENDCHANGE = 0x02;
 }
 "@
 
-$result = [Wallpaper]::SystemParametersInfo(20, 0, $ImagePath, 3)
-Write-Host "SystemParametersInfo result: $result"
-
-# Method 4: Force Windows to refresh personalization settings
-Write-Host "Refreshing personalization settings..."
 try {
-    $shell = New-Object -ComObject Shell.Application
-    $shell.Windows() | ForEach-Object { $_.Refresh() }
+    # Use proper constants and force immediate update
+    $result = [WallpaperAPI]::SystemParametersInfo([WallpaperAPI]::SPI_SETDESKWALLPAPER, 0, $ImagePath, [WallpaperAPI]::SPIF_UPDATEINIFILE -bor [WallpaperAPI]::SPIF_SENDCHANGE)
+    Write-Host "SystemParametersInfo result: $result"
+    
+    if ($result -eq 0) {
+        Write-Host "Warning: SystemParametersInfo returned 0 (may indicate failure)"
+    }
 } catch {
-    Write-Host "Could not refresh shell windows"
+    Write-Host "ERROR with SystemParametersInfo: $($_.Exception.Message)"
 }
 
-# Method 5: Broadcast settings change
+# Method 4: Force desktop refresh
+Write-Host "Forcing desktop refresh..."
+try {
+    # Refresh desktop
+    [WallpaperAPI]::InvalidateRect([IntPtr]::Zero, [IntPtr]::Zero, $true)
+    [WallpaperAPI]::UpdateWindow([IntPtr]::Zero)
+    
+    # Also try refreshing explorer
+    $shell = New-Object -ComObject Shell.Application
+    $shell.Windows() | ForEach-Object { 
+        try { $_.Refresh() } catch { }
+    }
+} catch {
+    Write-Host "Warning: Could not fully refresh desktop: $($_.Exception.Message)"
+}
+
+# Method 5: Additional notification methods
+Write-Host "Broadcasting settings changes..."
 Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
-public class Settings {
-    [DllImport("user32.dll", SetLastError = true)]
+public class SettingsNotify {
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
     public static extern bool SendNotifyMessage(IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam);
+    
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+    
+    public const uint WM_SETTINGCHANGE = 0x001A;
+    public const uint WM_WININICHANGE = 0x001A;
+    public const IntPtr HWND_BROADCAST = (IntPtr)0xFFFF;
 }
 "@
 
-[Settings]::SendNotifyMessage([IntPtr]0xFFFF, 0x001A, [UIntPtr]::Zero, "Environment")
+try {
+    # Broadcast multiple setting change messages
+    [SettingsNotify]::SendNotifyMessage([SettingsNotify]::HWND_BROADCAST, [SettingsNotify]::WM_SETTINGCHANGE, [UIntPtr]::Zero, "Environment")
+    [SettingsNotify]::SendMessage([SettingsNotify]::HWND_BROADCAST, [SettingsNotify]::WM_SETTINGCHANGE, [IntPtr]::Zero, [IntPtr]::Zero)
+    
+    Write-Host "Settings change notifications sent"
+} catch {
+    Write-Host "Warning: Could not send all notifications: $($_.Exception.Message)"
+}
 
-Write-Host "Wallpaper setting complete!"
-Write-Host "If you still see issues, try:"
-Write-Host "1. Open Settings > Personalization > Background"
-Write-Host "2. Make sure it shows 'Picture' mode"
-Write-Host "3. If not, manually select 'Picture' and browse to: $ImagePath" 
+# Give system time to process changes
+Start-Sleep -Milliseconds 500
+
+Write-Host "Wallpaper setting process complete!"
+Write-Host ""
+Write-Host "Troubleshooting info:"
+Write-Host "- Image file: $ImagePath"
+Write-Host "- File exists: $(Test-Path $ImagePath)"
+Write-Host "- File size: $((Get-Item $ImagePath -ErrorAction SilentlyContinue).Length) bytes"
+Write-Host ""
+Write-Host "If wallpaper didn't change:"
+Write-Host "1. Check Windows Settings > Personalization > Background"
+Write-Host "2. Ensure it's set to 'Picture' (not 'Slideshow' or 'Solid color')"
+Write-Host "3. Try manually selecting the image: $ImagePath"
+Write-Host "4. Restart Windows Explorer: taskkill /f /im explorer.exe && explorer.exe"
 
 '@
 
