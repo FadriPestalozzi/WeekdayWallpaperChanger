@@ -1,6 +1,6 @@
 # Weekday Wallpaper Changer for Windows 11
 
-**Change your desktop wallpaper automatically, based on the weekday — no manual fiddling required.**
+Customize your desktop wallpaper based on the current weekday — no manual fiddling required.
 
 ## Table of Contents
 
@@ -14,10 +14,10 @@
 
 ## 🚀 Features
 
-1. **Graphical Folder Selection**  
-   - Easy GUI dialogs for picking image and script locations—no path-typing needed.
+1. ### Graphical Folder Selection
+   - **Intuitive GUI** dialogs to pick image and script locations either by mouse or copy-paste your path.
 
-2. **Wallpaper Display Mode Selection**  
+2. ### Wallpaper Display Mode Selection
    - Choose how wallpaper images are displayed on your monitors:
      - **Stretch**: Distorts image to fill screen exactly (no black bars)
      - **Fill**: Crops image while maintaining aspect ratio (no black bars)
@@ -25,25 +25,25 @@
      - **Center**: Original size centered (may have black bars)
      - **Span**: Spans image across all monitors as one continuous image
 
-3. **Multi-Format Image Support**  
+3. ### Multi-Format Image Support
    - Supports JPG, JPEG, PNG, BMP, GIF, TIFF, WEBP formats
    - Automatically detects file extensions for each weekday
 
-4. **Flexible Script Installation**  
+4. ### Flexible Script Installation
    - Installer copies and patches the script for you; destination folder is user-chosen.
 
-5. **Automatic Path Patching**  
+5. ### Automatic Path Patching
    - The installer automatically updates image paths and wallpaper style settings in your script.
 
-6. **Advanced Task Scheduler Automation**  
+6. ### Advanced Task Scheduler Automation
    - Sets up scheduled task with both daily (midnight) and logon triggers
    - XML-based configuration for better control and reliability
 
-7. **Windows 11 Slideshow Conflict Resolution**  
+7. ### Windows 11 Slideshow Conflict Resolution
    - Multiple methods to ensure wallpaper changes work properly
    - Disables slideshow mode and forces picture mode
 
-8. **Error Handling and Cleanup**  
+8. ### Error Handling and Cleanup
    - Clear error messages, uninstall option included.
 
 ## 🖼️ Image File Setup
