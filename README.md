@@ -2,29 +2,188 @@
 
 **Change your desktop wallpaper automatically, based on the weekday — no manual fiddling required.**
 
+## Table of Contents
+
+- [Features](#-features)
+- [Image File Setup](#️-image-file-setup)
+- [Installation](#-installation)
+- [Task Scheduler](#-task-scheduler)
+- [Manual Testing](#-manual-testing)
+- [Development](#-development)
+- [PS2EXE Conversion](#-ps2exe-conversion)
+
 ## 🚀 Features
 
 1. **Graphical Folder Selection**  
    - Easy GUI dialogs for picking image and script locations—no path-typing needed.
-2. **Flexible Script Installation**  
+
+2. **Wallpaper Display Mode Selection**  
+   - Choose how wallpaper images are displayed on your monitors:
+     - **Stretch**: Distorts image to fill screen exactly (no black bars)
+     - **Fill**: Crops image while maintaining aspect ratio (no black bars)
+     - **Fit**: Shows entire image (may have black bars)
+     - **Center**: Original size centered (may have black bars)
+     - **Span**: Spans image across all monitors as one continuous image
+
+3. **Multi-Format Image Support**  
+   - Supports JPG, JPEG, PNG, BMP, GIF, TIFF, WEBP formats
+   - Automatically detects file extensions for each weekday
+
+4. **Flexible Script Installation**  
    - Installer copies and patches the script for you; destination folder is user-chosen.
-3. **Automatic Path Patching**  
-   - The installer automatically updates image paths in your script.
-4. **Task Scheduler Automation**  
-   - Sets up a daily scheduled task at midnight to change wallpaper.
-5. **Error Handling and Cleanup**  
+
+5. **Automatic Path Patching**  
+   - The installer automatically updates image paths and wallpaper style settings in your script.
+
+6. **Advanced Task Scheduler Automation**  
+   - Sets up scheduled task with both daily (midnight) and logon triggers
+   - XML-based configuration for better control and reliability
+
+7. **Windows 11 Slideshow Conflict Resolution**  
+   - Multiple methods to ensure wallpaper changes work properly
+   - Disables slideshow mode and forces picture mode
+
+8. **Error Handling and Cleanup**  
    - Clear error messages, uninstall option included.
 
 ## 🖼️ Image File Setup
 
-Place 7 images (e.g. `1-Sun.jpg`, `2-Mon.png`, `3-Tue.bmp`, ..., `7-Sat.webp`) in a folder of your choice.
+Place 7 images in a folder of your choice with these exact names:
+
+- `1-Sun` (Sunday)
+- `2-Mon` (Monday) 
+- `3-Tue` (Tuesday)
+- `4-Wed` (Wednesday)
+- `5-Thu` (Thursday)
+- `6-Fri` (Friday)
+- `7-Sat` (Saturday)
 
 **Supported image formats:** JPG, JPEG, PNG, BMP, GIF, TIFF, WEBP
 
+**Examples:**
+- `1-Sun.jpg`, `2-Mon.png`, `3-Tue.webp`, `4-Wed.bmp`, etc.
+- You can mix formats: `1-Sun.jpg`, `2-Mon.png`, `3-Tue.webp`
+
 The script will automatically detect the file extension for each weekday image.
 
-## 🛠️ PowerShell Script Setup
+## 🛠️ Installation
 
-Your `set_wallpaper.ps1` should use this line:
+1. **Run the Installer**: Execute `WeekdayWallpaperChanger_UnInstaller.ps1`
+2. **Select Image Folder**: Choose the folder containing your 7 weekday images
+3. **Select Script Location**: Choose where to install the wallpaper script (e.g., `C:\Scripts`)
+4. **Choose Display Mode**: Select how wallpaper should be displayed on your monitors
+5. **Automatic Setup**: The installer will:
+   - Copy and configure the wallpaper script
+   - Create Task Scheduler entry with daily and logon triggers
+   - Test the installation
+
+## 📅 Task Scheduler
+
+The installer creates a scheduled task named **"WeekdayWallpaperChanger"** with:
+
+- **Daily Trigger**: Runs at 12:01 AM every day
+- **Logon Trigger**: Runs when you log in
+- **Settings**: 
+  - Runs whether user is logged on or not
+  - Does not store passwords
+  - Runs with highest privileges
+  - Can be triggered manually
+
+### Before Installation
+![Task Scheduler before installation](pics/png/Task_Scheduler_before_installation.png)
+
+### After Installation
+![Task Scheduler after installation](pics/png/Task_Scheduler_after_installation.png)
+
+**Actions Tab:**
+![Task Scheduler Actions](pics/png/Task_Scheduler_after_installation_Actions.png)
+
+**Settings Tab:**
+![Task Scheduler Settings](pics/png/Task_Scheduler_after_installation_Settings.png)
+
+**Daily Trigger Settings:**
+![Daily Trigger](pics/png/Task_Scheduler_trigger_daily_and_at_log_on.png)
+
+## 🔧 Manual Testing
+
+### Via Task Scheduler GUI
+1. Open Task Scheduler (`taskschd.msc`)
+2. Find "WeekdayWallpaperChanger" in the task list
+3. Right-click and select "Run"
+
+![Manual test via GUI](pics/png/Task_Scheduler_run_manually_to_test.png)
+
+### Via Command Line
 ```powershell
-$imgPath = "{IMG_FOLDER}\$filename"
+# Run the scheduled task manually
+schtasks.exe /Run /TN "WeekdayWallpaperChanger"
+
+# Check active tasks
+schtasks.exe /Query /TN "WeekdayWallpaperChanger"
+```
+
+![Check active tasks](pics/png/Task_Scheduler_check_Active_Tasks.png)
+
+### Direct Script Execution
+```powershell
+# Run the wallpaper script directly
+PowerShell.exe -ExecutionPolicy Bypass -File "C:\Scripts\set_weekday_wallpaper.ps1"
+
+# Test with specific image
+PowerShell.exe -ExecutionPolicy Bypass -File "C:\Scripts\set_weekday_wallpaper.ps1" -ImagePath "C:\Images\1-Sun.jpg"
+```
+
+### Example Output
+![Daily wallpaper applied](pics/png/daily_wallpaper_applied__today_is_Thursday.png)
+
+## 🔧 Development
+
+### Running the Script
+```powershell
+# Interactive mode (shows install/uninstall dialog)
+PowerShell.exe -ExecutionPolicy Bypass -File "WeekdayWallpaperChanger_UnInstaller.ps1"
+
+# Install mode
+PowerShell.exe -ExecutionPolicy Bypass -File "WeekdayWallpaperChanger_UnInstaller.ps1" -Install
+
+# Uninstall mode  
+PowerShell.exe -ExecutionPolicy Bypass -File "WeekdayWallpaperChanger_UnInstaller.ps1" -Uninstall
+```
+
+### Command Chaining in PowerShell
+PowerShell 5.1 doesn't support `&&` operator. Use these alternatives:
+
+```powershell
+# Sequential execution (always runs both)
+command1; command2
+
+# Conditional execution
+if (command1) { command2 }
+
+# For PowerShell 7+ only
+command1 && command2
+```
+
+## 📦 PS2EXE Conversion
+
+Convert the PowerShell script to an executable:
+
+### Install PS2EXE Module
+```powershell
+Install-Module ps2exe -Scope CurrentUser -Force
+```
+
+### Convert to EXE
+```powershell
+Invoke-ps2exe -inputFile "WeekdayWallpaperChanger_UnInstaller.ps1" -outputFile "WeekdayWallpaperChanger.exe" -iconFile "pics\ico\WeekdayWallpaperChanger.ico" -noConsole
+```
+
+### Development Workflow
+```powershell
+# Edit script, then convert and test
+Invoke-ps2exe -inputFile "WeekdayWallpaperChanger_UnInstaller.ps1" -outputFile "WeekdayWallpaperChanger.exe" -iconFile "pics\ico\WeekdayWallpaperChanger.ico" -noConsole; .\WeekdayWallpaperChanger.exe
+```
+
+---
+
+**Note**: This tool is designed for Windows 11 and uses advanced wallpaper setting methods to handle slideshow conflicts and multi-monitor setups.
