@@ -1,6 +1,6 @@
 # Weekday Wallpaper Changer for Windows 11
 
-Customize your desktop wallpaper based on the current weekday — no manual fiddling required.
+Setup your desktop wallpaper to automatically iterate through a predefined set of 7 images corresponding to each day of the week.
 
 ## Table of Contents
 
@@ -9,8 +9,7 @@ Customize your desktop wallpaper based on the current weekday — no manual fidd
 - [Installation](#-installation)
 - [Task Scheduler](#-task-scheduler)
 - [Manual Testing](#-manual-testing)
-- [Development](#-development)
-- [PS2EXE Conversion](#-ps2exe-conversion)
+- [Building from Source](#-building-from-source)
 
 ## 🚀 Features
 
@@ -68,14 +67,23 @@ The script will automatically detect the file extension for each weekday image.
 
 ## 🛠️ Installation
 
-1. **Run the Installer**: Execute `WeekdayWallpaperChanger_UnInstaller.ps1`
-2. **Select Image Folder**: Choose the folder containing your 7 weekday images
-3. **Select Script Location**: Choose where to install the wallpaper script (e.g., `C:\Scripts`)
-4. **Choose Display Mode**: Select how wallpaper should be displayed on your monitors
-5. **Automatic Setup**: The installer will:
-   - Copy and configure the wallpaper script
-   - Create Task Scheduler entry with daily and logon triggers
-   - Test the installation
+### PowerShell Script or Executable
+There are two options for you to install the automatic WeekdayWallpaperChanger. 
+1. **PowerShell Script**: Right-click `WeekdayWallpaperChanger_UnInstaller.ps1` and select "Run as administrator" (if you want to review the code)
+2. **Executable**: Double-click `WeekdayWallpaperChanger_UnInstaller.exe` (easiest option)
+
+### GUI Steps
+During the installatio you will be asked to:
+1. **Select Image Folder**: Choose the folder containing your 7 weekday images
+2. **Select Script Location**: Choose where to install the wallpaper script (e.g., `C:\Scripts`)
+3. **Choose Display Mode**: Select how wallpaper should be displayed on your monitors
+
+### Automatic Setup
+
+The installer will:
+1. Copy and configure the wallpaper script
+2. Create a Task Scheduler entry with daily and logon triggers
+3. Test the installation
 
 ## 📅 Task Scheduler
 
@@ -136,37 +144,11 @@ PowerShell.exe -ExecutionPolicy Bypass -File "C:\Scripts\set_weekday_wallpaper.p
 ### Example Output
 ![Daily wallpaper applied](pics/png/daily_wallpaper_applied__today_is_Thursday.png)
 
-## 🔧 Development
 
-### Running the Script
-```powershell
-# Interactive mode (shows install/uninstall dialog)
-PowerShell.exe -ExecutionPolicy Bypass -File "WeekdayWallpaperChanger_UnInstaller.ps1"
 
-# Install mode
-PowerShell.exe -ExecutionPolicy Bypass -File "WeekdayWallpaperChanger_UnInstaller.ps1" -Install
+## 📦 Building from Source
 
-# Uninstall mode  
-PowerShell.exe -ExecutionPolicy Bypass -File "WeekdayWallpaperChanger_UnInstaller.ps1" -Uninstall
-```
-
-### Command Chaining in PowerShell
-PowerShell 5.1 doesn't support `&&` operator. Use these alternatives:
-
-```powershell
-# Sequential execution (always runs both)
-command1; command2
-
-# Conditional execution
-if (command1) { command2 }
-
-# For PowerShell 7+ only
-command1 && command2
-```
-
-## 📦 PS2EXE Conversion
-
-Convert the PowerShell script to an executable:
+Here is the workflow to build from source (i.e. convert .ps1 into .exe using .ico). 
 
 ### Install PS2EXE Module
 ```powershell
