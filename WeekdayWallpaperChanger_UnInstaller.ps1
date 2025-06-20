@@ -261,11 +261,11 @@ function Get-DialogConfig($type) {
     switch ($type) {
         "FolderSelect" {
             return @{
-                Width = 750
-                Height = 300
+                Width = 760
+                Height = 350
                 Margin = 15
                 Spacing = 10
-                DescHeight = 80
+                DescHeight = 120
                 LabelHeight = 30
                 TextboxHeight = 30
                 ButtonWidth = 75
@@ -304,6 +304,23 @@ function Get-DialogConfig($type) {
                 FontSize = 10
             }
         }
+        "WallpaperStyle" {
+            return @{
+                Width = 800
+                Height = 500
+                Margin = 20
+                Spacing = 15
+                DescHeight = 40
+                GroupBoxHeight = 320
+                GroupBoxTitleHeight = 25
+                RadioHeight = 50
+                RadioSpacing = 55
+                ButtonWidth = 80
+                ButtonHeight = 35
+                Font = "Segoe UI"
+                FontSize = 10
+            }
+        }
         default {
             # Default configuration
             return @{
@@ -337,8 +354,8 @@ function Choose-Folder($desc, $showNew = $true) {
     # === PARAMETRIC LAYOUT CALCULATIONS ===
     # Calculate component dimensions
     $descriptionSizeWidth = $config.Width - (2 * $config.Margin)
-    $textboxWidth = 300
-    $browseButtonSizeWidth = 70
+    $textboxWidth = 600
+    $browseButtonSizeWidth = 100
     
     # Calculate Y positions step by step (avoid complex expressions in Point constructor)
     $descY = $config.Margin
@@ -448,6 +465,117 @@ function Choose-Folder($desc, $showNew = $true) {
     }
 }
 
+function Choose-WallpaperStyle {
+    # Get parametric configuration
+    $config = Get-DialogConfig "WallpaperStyle"
+    
+    # Create custom dialog for wallpaper style selection
+    $form = New-Object System.Windows.Forms.Form
+    $form.Text = "Choose Wallpaper Display Mode"
+    $form.Size = New-Object System.Drawing.Size($config.Width, $config.Height)
+    $form.StartPosition = "CenterScreen"
+    $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
+    $form.MaximizeBox = $false
+    $form.MinimizeBox = $false
+    $form.TopMost = $true
+    
+    $font = New-Object System.Drawing.Font($config.Font, $config.FontSize)
+    
+    # === PARAMETRIC LAYOUT CALCULATIONS ===
+    # Calculate component dimensions
+    $descriptionWidth = $config.Width - (2 * $config.Margin)
+    $groupBoxWidth = $config.Width - (2 * $config.Margin)
+    $radioWidth = $groupBoxWidth - (2 * $config.Spacing)
+    
+    # Calculate Y positions step by step
+    $descY = $config.Margin
+    $groupBoxY = $descY + $config.DescHeight + $config.Spacing
+    $buttonsY = $groupBoxY + $config.GroupBoxHeight + $config.Spacing
+    
+    # Calculate X positions for buttons
+    $okX = $config.Width - (2 * $config.ButtonWidth) - $config.Spacing - $config.Margin
+    $cancelX = $okX + $config.ButtonWidth + $config.Spacing
+    
+    # Description label
+    $lblDesc = New-Object System.Windows.Forms.Label
+    $lblDesc.Text = "Choose how your wallpaper images should be displayed on your monitors:"
+    $lblDesc.Location = New-Object System.Drawing.Point($config.Margin, $descY)
+    $lblDesc.Size = New-Object System.Drawing.Size($descriptionWidth, $config.DescHeight)
+    $lblDesc.Font = $font
+    $lblDesc.TextAlign = [System.Drawing.ContentAlignment]::TopLeft
+    
+    # Create radio buttons for each style
+    $radioButtons = @()
+    $styles = @(
+        @{ Value = "2"; Name = "Stretch"; Description = "Stretch image to fill screen exactly (may distort image, no black bars)" },
+        @{ Value = "10"; Name = "Fill"; Description = "Fill screen while maintaining aspect ratio (may crop image, no black bars)" },
+        @{ Value = "6"; Name = "Fit"; Description = "Fit entire image on screen (maintains aspect ratio, may show black bars)" },
+        @{ Value = "0"; Name = "Center"; Description = "Center image without scaling (original size, may show black bars)" },
+        @{ Value = "22"; Name = "Span"; Description = "Span image across all monitors as one continuous image" }
+    )
+    
+    # Group box for radio buttons
+    $groupBox = New-Object System.Windows.Forms.GroupBox
+    $groupBox.Text = "Display Options"
+    $groupBox.Location = New-Object System.Drawing.Point($config.Margin, $groupBoxY)
+    $groupBox.Size = New-Object System.Drawing.Size($groupBoxWidth, $config.GroupBoxHeight)
+    $groupBox.Font = $font
+    
+    # Create radio buttons inside group box (start below the GroupBox title)
+    [int]$radioY = $config.GroupBoxTitleHeight + $config.Spacing
+    foreach ($style in $styles) {
+        $radio = New-Object System.Windows.Forms.RadioButton
+        $radio.Text = "$($style.Name) - $($style.Description)"
+        $radio.Location = New-Object System.Drawing.Point($config.Spacing, $radioY)
+        $radio.Size = New-Object System.Drawing.Size($radioWidth, $config.RadioHeight)
+        $radio.Font = $font
+        $radio.Tag = $style.Value
+        $radio.AutoSize = $false
+        
+        # Set Stretch as default (most common for multi-monitor)
+        if ($style.Value -eq "2") {
+            $radio.Checked = $true
+        }
+        
+        $radioButtons += $radio
+        $groupBox.Controls.Add($radio)
+        $radioY = $radioY + $config.RadioSpacing
+    }
+    
+    # OK and Cancel buttons
+    $btnOK = New-Object System.Windows.Forms.Button
+    $btnOK.Text = "OK"
+    $btnOK.Location = New-Object System.Drawing.Point($okX, $buttonsY)
+    $btnOK.Size = New-Object System.Drawing.Size($config.ButtonWidth, $config.ButtonHeight)
+    $btnOK.Font = $font
+    $btnOK.DialogResult = [System.Windows.Forms.DialogResult]::OK
+    
+    $btnCancel = New-Object System.Windows.Forms.Button
+    $btnCancel.Text = "Cancel"
+    $btnCancel.Location = New-Object System.Drawing.Point($cancelX, $buttonsY)
+    $btnCancel.Size = New-Object System.Drawing.Size($config.ButtonWidth, $config.ButtonHeight)
+    $btnCancel.Font = $font
+    $btnCancel.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+    
+    # Add controls to form
+    $form.Controls.AddRange(@($lblDesc, $groupBox, $btnOK, $btnCancel))
+    $form.AcceptButton = $btnOK
+    $form.CancelButton = $btnCancel
+    
+    # Show dialog
+    $result = $form.ShowDialog()
+    if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+        $selectedStyle = $radioButtons | Where-Object { $_.Checked } | Select-Object -First 1
+        if ($selectedStyle) {
+            return $selectedStyle.Tag
+        } else {
+            return "2"  # Default to Stretch if nothing selected
+        }
+    } else {
+        throw "Cancelled"
+    }
+}
+
 function Choose-XmlFolder($desc) {
     # Create custom dialog for XML folder selection with auto-detection
     $form = New-Object System.Windows.Forms.Form
@@ -485,20 +613,10 @@ function Choose-XmlFolder($desc) {
     $btnBrowse = New-Object System.Windows.Forms.Button
     $btnBrowse.Text = "Browse..."
     $btnBrowse.Location = New-Object System.Drawing.Point(620, 150)  
-    $btnBrowse.Size = New-Object System.Drawing.Size(90, 30)
+    $btnBrowse.Size = New-Object System.Drawing.Size(120, 30)
     $btnBrowse.Font = $font
     
-    # XML file selection
-    $lblXml = New-Object System.Windows.Forms.Label
-    $lblXml.Text = "Available XML files in folder:"
-    $lblXml.Location = New-Object System.Drawing.Point(10, 200)  
-    $lblXml.Size = New-Object System.Drawing.Size(600, 30)  
-    $lblXml.Font = $font
-    
-    $listXml = New-Object System.Windows.Forms.ListBox
-    $listXml.Location = New-Object System.Drawing.Point(10, 240)  
-    $listXml.Size = New-Object System.Drawing.Size(600, 120)  
-    $listXml.Font = $font
+    # XML file selection - REMOVED (no longer needed)
     
     # OK and Cancel buttons
     $btnOK = New-Object System.Windows.Forms.Button
@@ -695,6 +813,9 @@ You can use any supported image format (JPG, PNG, BMP, GIF, TIFF, WEBP).
         # 2. Prompt for script installation location with explanation
         $scriptDir = Choose-Folder "Select where to install the set_weekday_wallpaper.ps1 script. This script will automatically change your wallpaper based on the day of the week. Choose a permanent location like C:\Scripts or D:\Programs where the script can remain installed." $true
 
+        # 3. Prompt for wallpaper display style
+        $wallpaperStyle = Choose-WallpaperStyle
+
 # --------------------- script start ---------------------
 
         # 4. Compose PowerShell script content 
@@ -724,7 +845,7 @@ if (-not (Test-Path $ImagePath)) {
 
 # Method 1: Registry approach (most reliable for Windows 11)
 Write-Host "Setting registry values..."
-Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "WallpaperStyle" -Value "6" -Force
+Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "WallpaperStyle" -Value "PLACEHOLDER_WALLPAPER_STYLE" -Force
 Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "TileWallpaper" -Value "0" -Force
 Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "Wallpaper" -Value $ImagePath -Force
 
@@ -787,9 +908,9 @@ Write-Host "3. If not, manually select 'Picture' and browse to: $ImagePath"
 
 # --------------------- script end ---------------------
 
-        # 5. Write the script to install location, patch placeholder
+        # 5. Write the script to install location, patch placeholders
         $scriptDest = Join-Path $scriptDir 'set_weekday_wallpaper.ps1'
-        $wallpaperScript -replace 'PLACEHOLDER_IMG_FOLDER', [regex]::Escape($imgFolder) | Set-Content $scriptDest -Force
+        $wallpaperScript -replace 'PLACEHOLDER_IMG_FOLDER', [regex]::Escape($imgFolder) -replace 'PLACEHOLDER_WALLPAPER_STYLE', $wallpaperStyle | Set-Content $scriptDest -Force
 
         # 6. Create advanced scheduled task using XML for better control
         $taskXml = @"
@@ -875,6 +996,17 @@ Write-Host "3. If not, manually select 'Picture' and browse to: $ImagePath"
                 Write-Host ""
                 Write-Host "📄 Script Location: $scriptDest"
                 Write-Host "🖼️ Images Folder: $imgFolder"
+                
+                # Display selected wallpaper style
+                $styleNames = @{
+                    "0" = "Center"
+                    "2" = "Stretch" 
+                    "6" = "Fit"
+                    "10" = "Fill"
+                    "22" = "Span"
+                }
+                $styleName = $styleNames[$wallpaperStyle]
+                Write-Host "🎨 Wallpaper Style: $styleName (value: $wallpaperStyle)"
                 
                 Write-Host "✅ Installation complete! Your wallpaper will change automatically daily."
             } else {
