@@ -1,6 +1,6 @@
 # Weekday Wallpaper Changer for Windows 11
 
-Setup your desktop wallpaper to automatically iterate through a predefined set of 7 images corresponding to each day of the week.
+Automatically change your desktop wallpaper background according to each weekday using a predefined set of 7 images.
 
 ## Table of Contents
 
