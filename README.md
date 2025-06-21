@@ -73,10 +73,22 @@ The script will automatically detect the file extension for each weekday image.
 
 ## 🛠️ Installation
 
-### PowerShell Script or Executable
-There are two options for you to install the automatic WeekdayWallpaperChanger. 
-1. **PowerShell Script**: Right-click `WeekdayWallpaperChanger_UnInstaller.ps1` and select "Run as administrator" (if you want to review the code)
-2. **Executable**: Double-click `WeekdayWallpaperChanger_UnInstaller.exe` (easiest option)
+### Quick Start - Two Easy Ways to Install
+
+**Option 1: Executable (Recommended for Beginners)**
+1. Download the `WeekdayWallpaperChanger_UnInstaller.exe` file
+2. Double-click the file to run it
+3. Follow the on-screen prompts to complete installation or uninstallation
+
+**Option 2: PowerShell Script (For Users Who Want to Review Code)**
+1. Download the `WeekdayWallpaperChanger_UnInstaller.ps1` file
+2. Right-click the file and select "Run as administrator"
+3. Follow the on-screen prompts to complete installation or uninstallation
+
+Both options will guide you through the same process - the only difference is how you start the installer. 
+
+The same file can be used for both installation and uninstallation.
+
 
 ### GUI Steps
 During the installatio you will be asked to:
