@@ -11,11 +11,12 @@ This intuitive tool guides you to setup an automatically changing background acc
 ## Table of Contents
 
 - [Features](#-features)
-- [Image File Setup](#-image-file-setup)
-- [Installation](#-installation)
+- [Image File Setup](#️-image-file-setup)
+- [Installation](#️-installation)
 - [Task Scheduler](#-task-scheduler)
 - [Manual Testing](#-manual-testing)
 - [Building from Source](#-building-from-source)
+
 
 ## 🚀 Features
 
